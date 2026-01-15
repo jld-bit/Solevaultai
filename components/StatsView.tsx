@@ -52,7 +52,7 @@ const StatsView: React.FC<StatsViewProps> = ({ sneakers }) => {
                     paddingAngle={5}
                     dataKey="value"
                 >
-                    {brandData.map((entry, index) => (
+                    {brandData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>
