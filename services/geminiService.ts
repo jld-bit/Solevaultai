@@ -18,13 +18,7 @@ export const identifySneaker = async (
   textPrompt: string
 ): Promise<{ brand: string; model: string; colorway: string; estimatedPrice?: number; description?: string } | null> => {
   try {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-      console.error("API Key not found");
-      return null;
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     // Construct parts based on input availability
     const parts: any[] = [];
