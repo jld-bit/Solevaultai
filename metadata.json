@@ -1,0 +1,7 @@
+{
+  "name": "SoleVault",
+  "description": "The simplest way to manage your sneaker inventory with AI-powered identification.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
