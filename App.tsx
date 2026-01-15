@@ -65,13 +65,6 @@ const App: React.FC = () => {
     setCurrentView('COLLECTION');
   };
 
-  const handleImportData = (data: Sneaker[]) => {
-    if (confirm('This will overwrite your current collection. Are you sure?')) {
-        setSneakers(data);
-        alert('Vault restored successfully!');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white flex justify-center">
       <div className="w-full max-w-md bg-white min-h-screen flex flex-col p-6">
@@ -104,7 +97,7 @@ const App: React.FC = () => {
           )}
 
           {currentView === 'STATS' && (
-            <StatsView sneakers={sneakers} onImport={handleImportData} />
+            <StatsView sneakers={sneakers} />
           )}
         </main>
       </div>

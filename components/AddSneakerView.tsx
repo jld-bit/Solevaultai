@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sneaker } from '../types';
-import { identifySneaker } from '../services/geminiService';
 
 interface AddSneakerViewProps {
   onSave: (sneaker: Sneaker) => void;
@@ -11,7 +10,6 @@ interface AddSneakerViewProps {
 
 const AddSneakerView: React.FC<AddSneakerViewProps> = ({ onSave, onCancel, initialModel = '', initialSneaker }) => {
   const [image, setImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState(initialModel);
   const [colorway, setColorway] = useState('');
@@ -43,33 +41,6 @@ const AddSneakerView: React.FC<AddSneakerViewProps> = ({ onSave, onCancel, initi
         setImage(reader.result as string);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAIIdentify = async () => {
-    if (!image && !model) {
-      setError("Please upload an image or enter a model name for AI to identify.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await identifySneaker(image, model);
-      if (data) {
-        setBrand(data.brand);
-        setModel(data.model);
-        setColorway(data.colorway);
-        // Only set price if AI provides it, otherwise leave as is
-        if (data.estimatedPrice) setPrice(data.estimatedPrice.toString());
-      } else {
-        setError("Could not identify sneaker. Please try again.");
-      }
-    } catch (err) {
-      setError("AI Service unavailable. Check API Key.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -127,24 +98,6 @@ const AddSneakerView: React.FC<AddSneakerViewProps> = ({ onSave, onCancel, initi
                 onChange={handleImageUpload}
             />
         </div>
-
-        {/* AI Action Button */}
-        <button 
-            type="button"
-            onClick={handleAIIdentify}
-            disabled={loading}
-            className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center space-x-2 ${
-                loading ? 'bg-gray-400' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
-            }`}
-        >
-            {loading ? (
-                <span>Thinking...</span>
-            ) : (
-                <>
-                   <span>✨ Auto-fill with AI</span>
-                </>
-            )}
-        </button>
 
         {error && (
             <div className="bg-red-50 text-red-500 p-3 rounded-lg text-sm font-semibold">

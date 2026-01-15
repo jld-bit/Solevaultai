@@ -1,17 +1,14 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Sneaker } from '../types';
 
 interface StatsViewProps {
   sneakers: Sneaker[];
-  onImport: (data: Sneaker[]) => void;
 }
 
 const COLORS = ['#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#E5E5E5'];
 
-const StatsView: React.FC<StatsViewProps> = ({ sneakers, onImport }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
+const StatsView: React.FC<StatsViewProps> = ({ sneakers }) => {
   // Use 0 if price is undefined
   const totalValue = sneakers.reduce((sum, s) => sum + (s.price || 0), 0);
   
@@ -24,44 +21,6 @@ const StatsView: React.FC<StatsViewProps> = ({ sneakers, onImport }) => {
     });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [sneakers]);
-
-  const handleExport = () => {
-    const dataStr = JSON.stringify(sneakers, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `solevault_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const json = JSON.parse(event.target?.result as string);
-            if (Array.isArray(json)) {
-                onImport(json);
-            } else {
-                alert("Invalid backup file.");
-            }
-        } catch (err) {
-            alert("Error reading file.");
-        }
-    };
-    reader.readAsText(file);
-    // Reset input so same file can be selected again if needed
-    e.target.value = ''; 
-  };
 
   return (
     <div className="flex flex-col h-full animate-fade-in mt-6 overflow-y-auto no-scrollbar pb-20">
@@ -119,34 +78,6 @@ const StatsView: React.FC<StatsViewProps> = ({ sneakers, onImport }) => {
                 No data available.
             </div>
         )}
-      </div>
-
-      <div className="border-t pt-8">
-        <h3 className="text-lg font-bold mb-4">Data Management</h3>
-        <p className="text-sm text-gray-500 mb-4">
-            Save your vault to a file or restore from a backup.
-        </p>
-        <div className="flex space-x-3">
-            <button 
-                onClick={handleExport}
-                className="flex-1 py-3 px-4 bg-white border-2 border-black text-black rounded-xl font-bold hover:bg-gray-50 transition-colors"
-            >
-                Export JSON
-            </button>
-            <button 
-                onClick={handleImportClick}
-                className="flex-1 py-3 px-4 bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
-            >
-                Import JSON
-            </button>
-            <input 
-                type="file" 
-                ref={fileInputRef}
-                className="hidden"
-                accept=".json"
-                onChange={handleFileChange}
-            />
-        </div>
       </div>
     </div>
   );
