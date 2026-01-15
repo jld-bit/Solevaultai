@@ -8,19 +8,41 @@ interface CollectionViewProps {
   onEdit: (sneaker: Sneaker) => void;
 }
 
+type SortOption = 'newest' | 'oldest' | 'price_high' | 'price_low';
+
 const CollectionView: React.FC<CollectionViewProps> = ({ sneakers, onDelete, onAddFromSearch, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const filteredSneakers = useMemo(() => {
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) return sneakers;
+    let result = sneakers;
 
-    return sneakers.filter(s => {
-      // Create a combined string for smarter searching (e.g. "Nike Jordan" works even if fields are separate)
-      const fullSearchString = `${s.brand} ${s.model} ${s.colorway}`.toLowerCase();
-      return fullSearchString.includes(term);
+    // Filter
+    const term = searchTerm.toLowerCase().trim();
+    if (term) {
+        result = result.filter(s => {
+            const fullSearchString = `${s.brand} ${s.model} ${s.colorway}`.toLowerCase();
+            return fullSearchString.includes(term);
+        });
+    }
+
+    // Sort
+    return [...result].sort((a, b) => {
+        switch (sortBy) {
+            case 'newest':
+                return new Date(b.addedDate).getTime() - new Date(a.addedDate).getTime();
+            case 'oldest':
+                return new Date(a.addedDate).getTime() - new Date(b.addedDate).getTime();
+            case 'price_high':
+                return (b.price || 0) - (a.price || 0);
+            case 'price_low':
+                return (a.price || 0) - (b.price || 0);
+            default:
+                return 0;
+        }
     });
-  }, [sneakers, searchTerm]);
+
+  }, [sneakers, searchTerm, sortBy]);
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
@@ -31,29 +53,42 @@ const CollectionView: React.FC<CollectionViewProps> = ({ sneakers, onDelete, onA
         </span>
       </div>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      <div className="flex space-x-2 mb-4">
+        <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            </div>
+            <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-8 py-3 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-black text-sm focus:outline-none transition-all placeholder-gray-400 font-semibold"
+            />
+            {searchTerm && (
+                <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-black transition-colors"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            )}
         </div>
-        <input
-            type="text"
-            placeholder="Search brand, model, or color..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-10 py-4 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-black text-lg focus:outline-none transition-all placeholder-gray-400 font-semibold shadow-sm"
-        />
-        {searchTerm && (
-            <button 
-                onClick={() => setSearchTerm('')}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-black transition-colors"
-            >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        )}
+        
+        <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="bg-gray-50 text-sm font-bold rounded-xl px-3 py-3 border border-transparent focus:border-black focus:outline-none focus:bg-white text-gray-600 cursor-pointer"
+        >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="price_high">$$$ High</option>
+            <option value="price_low">$$$ Low</option>
+        </select>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
