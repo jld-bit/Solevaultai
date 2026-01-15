@@ -10,7 +10,7 @@ const sneakerSchema: Schema = {
     estimatedPrice: { type: Type.NUMBER, description: "Estimated market value in USD as a number." },
     description: { type: Type.STRING, description: "A short, punchy description of the shoe." },
   },
-  required: ["brand", "model", "colorway"], // Price is now optional
+  required: ["brand", "model", "colorway"],
 };
 
 export const identifySneaker = async (
@@ -24,7 +24,9 @@ export const identifySneaker = async (
     const parts: any[] = [];
     
     if (imageBase64) {
-      const base64Data = imageBase64.split(',')[1];
+      // Handles data:image/jpeg;base64, prefix if present
+      const base64Data = imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64;
+      
       parts.push({
         inlineData: {
           mimeType: 'image/jpeg',

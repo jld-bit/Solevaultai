@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     plugins: [react()],
+    base: './', // CRITICAL: Ensures assets load correctly in Capacitor/Mobile apps
     define: {
       // This ensures process.env.API_KEY works in the browser code
       'process.env.API_KEY': JSON.stringify(env.API_KEY)

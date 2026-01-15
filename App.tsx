@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, SafeAreaView, StatusBar, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Navbar from './components/Navbar';
 import CollectionView from './components/CollectionView';
 import AddSneakerView from './components/AddSneakerView';
@@ -7,37 +9,47 @@ import { ViewState, Sneaker } from './types';
 
 const STORAGE_KEY = 'solevault_inventory';
 
-const App: React.FC = () => {
+export default function App() {
   const [currentView, setCurrentView] = useState<ViewState>('COLLECTION');
   const [sneakers, setSneakers] = useState<Sneaker[]>([]);
   const [prefillModel, setPrefillModel] = useState('');
   const [editingSneaker, setEditingSneaker] = useState<Sneaker | null>(null);
 
-  // Load from local storage on mount
+  // Load from Async Storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const loadData = async () => {
       try {
-        setSneakers(JSON.parse(saved));
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setSneakers(JSON.parse(saved));
+        }
       } catch (e) {
-        console.error("Failed to parse saved sneakers", e);
+        console.error("Failed to load sneakers", e);
       }
-    }
+    };
+    loadData();
   }, []);
 
-  // Save to local storage on change
+  // Save to Async Storage on change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sneakers));
+    const saveData = async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sneakers));
+      } catch (e) {
+        console.error("Failed to save sneakers", e);
+      }
+    };
+    saveData();
   }, [sneakers]);
 
   const handleSaveSneaker = (sneaker: Sneaker) => {
     if (editingSneaker) {
-        // Update existing sneaker
-        setSneakers(prev => prev.map(s => s.id === sneaker.id ? sneaker : s));
-        setEditingSneaker(null);
+      // Update existing sneaker
+      setSneakers(prev => prev.map(s => s.id === sneaker.id ? sneaker : s));
+      setEditingSneaker(null);
     } else {
-        // Add new sneaker
-        setSneakers(prev => [sneaker, ...prev]);
+      // Add new sneaker
+      setSneakers(prev => [sneaker, ...prev]);
     }
     setPrefillModel('');
     setCurrentView('COLLECTION');
@@ -66,8 +78,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex justify-center">
-      <div className="w-full max-w-md bg-white min-h-screen flex flex-col p-6">
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.content}>
         <Navbar 
           currentView={currentView} 
           onChangeView={(view) => {
@@ -77,7 +90,7 @@ const App: React.FC = () => {
           }} 
         />
         
-        <main className="flex-1 overflow-hidden relative">
+        <View style={styles.mainArea}>
           {currentView === 'COLLECTION' && (
             <CollectionView 
               sneakers={sneakers} 
@@ -99,10 +112,25 @@ const App: React.FC = () => {
           {currentView === 'STATS' && (
             <StatsView sneakers={sneakers} />
           )}
-        </main>
-      </div>
-    </div>
+        </View>
+      </View>
+    </SafeAreaView>
   );
-};
+}
 
-export default App;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? 25 : 0,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  mainArea: {
+    flex: 1,
+    marginTop: 10,
+  }
+});

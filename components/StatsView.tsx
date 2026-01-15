@@ -1,86 +1,170 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import React, { useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Sneaker } from '../types';
 
 interface StatsViewProps {
   sneakers: Sneaker[];
 }
 
-const COLORS = ['#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#E5E5E5'];
-
 const StatsView: React.FC<StatsViewProps> = ({ sneakers }) => {
-  // Use 0 if price is undefined
   const totalValue = sneakers.reduce((sum, s) => sum + (s.price || 0), 0);
   
-  // Calculate brand distribution
-  const brandData = React.useMemo(() => {
+  const brandData = useMemo(() => {
     const counts: Record<string, number> = {};
     sneakers.forEach(s => {
       const brand = s.brand || 'Other';
       counts[brand] = (counts[brand] || 0) + 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    // Sort by count desc
+    return Object.entries(counts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
   }, [sneakers]);
 
   return (
-    <div className="flex flex-col h-full animate-fade-in mt-6 overflow-y-auto no-scrollbar pb-20">
-      <h2 className="text-2xl font-bold mb-6">Vault Stats</h2>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Vault Stats</Text>
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-black text-white p-6 rounded-2xl shadow-lg">
-            <p className="text-sm text-gray-400 font-bold uppercase">Total Value</p>
-            <p className="text-3xl font-bold mt-1">${totalValue.toLocaleString()}</p>
-        </div>
-        <div className="bg-gray-100 text-black p-6 rounded-2xl">
-            <p className="text-sm text-gray-500 font-bold uppercase">Total Pairs</p>
-            <p className="text-3xl font-bold mt-1">{sneakers.length}</p>
-        </div>
-      </div>
+      <View style={styles.statsGrid}>
+        <View style={[styles.statCard, styles.blackCard]}>
+            <Text style={styles.statLabelLight}>Total Value</Text>
+            <Text style={styles.statValueLight}>${totalValue.toLocaleString()}</Text>
+        </View>
+        <View style={[styles.statCard, styles.grayCard]}>
+            <Text style={styles.statLabelDark}>Total Pairs</Text>
+            <Text style={styles.statValueDark}>{sneakers.length}</Text>
+        </View>
+      </View>
 
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 flex-col mb-8">
-        <h3 className="text-lg font-bold mb-4">Brand Distribution</h3>
-        {sneakers.length > 0 ? (
-          <div className="min-h-[250px] relative">
-            <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                <Pie
-                    data={brandData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                >
-                    {brandData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                </Pie>
-                <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    itemStyle={{ fontWeight: 'bold' }}
-                />
-                </PieChart>
-            </ResponsiveContainer>
-             {/* Legend */}
-             <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                {brandData.map((entry, index) => (
-                    <div key={entry.name} className="flex items-center space-x-1 text-xs font-bold bg-gray-50 px-2 py-1 rounded-lg">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                        <span>{entry.name}</span>
-                        <span className="text-gray-400">({entry.value})</span>
-                    </div>
-                ))}
-            </div>
-          </div>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Brand Distribution</Text>
+        
+        {brandData.length > 0 ? (
+            <View style={styles.chartContainer}>
+                {brandData.map((item, index) => {
+                    const percentage = Math.round((item.value / sneakers.length) * 100);
+                    return (
+                        <View key={item.name} style={styles.barRow}>
+                            <View style={styles.barLabelContainer}>
+                                <Text style={styles.barLabel}>{item.name}</Text>
+                                <Text style={styles.barCount}>{item.value} pairs</Text>
+                            </View>
+                            <View style={styles.progressBarBg}>
+                                <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+                            </View>
+                        </View>
+                    );
+                })}
+            </View>
         ) : (
-            <div className="flex items-center justify-center text-gray-400 h-[200px]">
-                No data available.
-            </div>
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No data available</Text>
+            </View>
         )}
-      </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 15,
+    marginBottom: 30,
+  },
+  statCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 16,
+    justifyContent: 'center',
+  },
+  blackCard: {
+    backgroundColor: '#000',
+  },
+  grayCard: {
+    backgroundColor: '#F3F4F6',
+  },
+  statLabelLight: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  statValueLight: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  statLabelDark: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  statValueDark: {
+    color: '#000',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  section: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  chartContainer: {
+    gap: 16,
+  },
+  barRow: {
+    gap: 8,
+  },
+  barLabelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  barLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  barCount: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#000',
+    borderRadius: 4,
+  },
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#9CA3AF',
+  }
+});
 
 export default StatsView;
